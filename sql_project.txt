@@ -1,0 +1,58 @@
+/*QUERY 1- query used for the first insight*/
+WITH table1 AS(SELECT customer_id,SUM(amount)AS pay_amount
+                FROM payment
+               GROUP BY 1
+               ORDER BY 2 DES
+               LIMIT 10);
+
+SELECT DATE_TRUNC('month', p.payment_date)AS pay_month, CONCAT(c.first_name, ' ', c.last_name),COUNT(*),SUM(amount)AS pay_amount
+  FROM table1 t1
+    JOIN payment p
+      ON t1.customer_id = p.customer_id
+    JOIN customer c
+      ON c.customer_id = p.customer_id
+GROUP BY 1,2
+ORDER BY 2
+
+/*QUERY 2- query used for second insight*/
+
+SELECT f.title, c.name,f.rental_duration, Ntile(4) OVER (ORDER BY f.rental_duration) AS standard_quartile
+    FROM category c
+  JOIN film_category fc
+    ON c.category_id = fc.category_id
+  JOIN film f
+    ON fc.film_id = f.film_id
+WHERE c.name IN ('Animation', 'Children','Classics','Comedy','Family','Music')
+
+
+/*QUERY 3 - query used for third insight*/
+
+SELECT name, standard_quartile, COUNT(*)
+  FROM (SELECT c.name, Ntile(4) OVER (ORDER BY f.rental_duration) AS standard_quartile
+            FROM category c
+          JOIN film_category fc
+            ON c.category_id = fc.category_id
+          JOIN film f
+            ON fc.film_id = f.film_id
+        WHERE c.name IN ('Animation', 'Children','Classics','Comedy','Family','Music')
+          ORDER BY 1) t1
+GROUP BY 1,2
+ORDER BY 1,2 ;
+
+
+/*QUERY 4 - query used for third insight*/
+
+
+WITH t1 AS
+  (SELECT DATE_PART('month', rental_date) as month, DATE_PART('year', rental_date) as year, str.store_id, COUNT(*) as count_rentals
+      FROM rental AS r
+    JOIN staff AS stf
+      ON  r.staff_id = stf.staff_id
+    JOIN store AS str
+      ON str.store_id = stf.store_id
+   GROUP BY 1,2,3);
+
+
+SELECT t1.month rental_month, t1.year rental_year, t1.store_id, count_rentals
+  FROM t1
+ORDER BY count_rentals DESC
